@@ -1,0 +1,21 @@
+{
+  "name": "image-serving-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node ./src/server.ts",
+    "dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"ts-node src/server.ts\"",
+    "pm2": "pm2 start startscript.js --name \"image-serving\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^16.11.6",
+    "express": "^4.17.1",
+    "node-cmd": "^5.0.0",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  }
+}
