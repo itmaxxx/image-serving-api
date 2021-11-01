@@ -1,6 +1,7 @@
 import * as http from "http";
 import {IncomingMessage, ServerResponse} from "http";
 import * as formidable from "formidable";
+import {sendErrorHttpJsonResponse} from "./utils/sendError";
 
 http.createServer(function(req: IncomingMessage, res: ServerResponse){
 	const url = req.url;
@@ -9,22 +10,26 @@ http.createServer(function(req: IncomingMessage, res: ServerResponse){
 	console.log(`[${req.method}] ${url}`);
 
 	if (url === '/upload' && req.method === 'POST') {
-		const form = formidable();
+		try {
+			const form = formidable();
 
-		form.parse(req, function(err, fields, files) {
-			if (err) {
-				throw (err);
-			}
+			form.parse(req, function(err, fields, files) {
+				if (err) {
+					throw (err);
+				}
 
-			console.log({ fields, files });
-			console.log(files.upload[0]);
+				console.log({ fields, files });
+				console.log(files.upload[0]);
 
-			res.writeHead(200);
-			res.write('received upload');
-			res.end();
-		});
+				res.writeHead(200);
+				res.write('received upload');
+				res.end();
+			});
 
-		return;
+			return;
+		} catch (error: any) {
+			sendErrorHttpJsonResponse(res, 500, { message: "Failed to upload file" })
+		}
 	}
 
 	res.writeHead(200, { 'content-type': 'text/html' });
