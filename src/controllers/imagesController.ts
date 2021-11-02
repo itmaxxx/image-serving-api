@@ -8,7 +8,7 @@ export default class ImagesController {
     try {
       const form = new formidable.IncomingForm();
 
-      form.parse(req, function (err, fields, files) {
+      await form.parse(req, async function(err, fields, files) {
         if (err) {
           throw err;
         }
@@ -21,11 +21,11 @@ export default class ImagesController {
           throw { message: 'File not passed' };
         }
 
-        fs.rename(
+        await fs.rename(
           file._writeStream.path,
           './src/www/public/uploads/original/' + file.originalFilename,
-          function (err) {
-            throw err;
+          (err) => {
+            if (err) throw err;
           }
         );
 
