@@ -15,13 +15,10 @@ export const getMimeType = (path: string) => {
     case 'jpeg':
     case 'jpg':
       return 'image/jpeg';
-    case 'bmp':
-    case 'gif':
     case 'png':
+    case 'webp':
       return 'image/' + extension;
     case 'json':
-    case 'pdf':
-    case 'rtf':
       return 'application/' + extension;
     default:
       return 'text/plain';
