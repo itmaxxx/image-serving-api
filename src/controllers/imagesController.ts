@@ -8,17 +8,25 @@ export default class ImagesController {
     try {
       const form = new formidable.IncomingForm();
 
-      await form.parse(req, async function(err, fields, files) {
+      await form.parse(req, async function (err, fields, files) {
         if (err) {
           throw err;
         }
 
         const file: any = (files.upload as any)?.length
-          ? files.upload[0]
-          : files.upload;
+          ? files.image[0]
+          : files.image;
 
         if (!file) {
-          throw { message: 'File not passed' };
+          return sendHttpJsonResponse(res, 403, { message: 'File not passed' });
+        }
+
+        if (
+          ['image/jpg', 'image/jpeg', 'image/webp', 'image/png'].indexOf(
+            file.mimetype
+          ) === -1
+        ) {
+          return sendHttpJsonResponse(res, 403, { message: 'Image type not supported' });
         }
 
         await fs.rename(
@@ -29,10 +37,8 @@ export default class ImagesController {
           }
         );
 
-        sendHttpJsonResponse(res, 200, { message: 'Your file uploaded' });
+        await sendHttpJsonResponse(res, 200, { message: 'Your file uploaded' });
       });
-
-      return;
     } catch (error: any) {
       sendHttpJsonResponse(res, 500, {
         message: error.message || 'Failed to upload file',
