@@ -6,7 +6,9 @@
   "scripts": {
     "start": "ts-node ./src/server.ts",
     "dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"ts-node src/server.ts\"",
-    "pm2": "pm2 start startscript.js --name \"image-serving\""
+    "pm2:windows": "pm2 start startscript.js --name \"image-serving\"",
+    "prettier:write": "npx prettier --write .",
+    "prettier:check": "npx prettier --check ."
   },
   "keywords": [],
   "author": "",
@@ -19,5 +21,8 @@
     "node-cmd": "^5.0.0",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.4"
+  },
+  "devDependencies": {
+    "prettier": "2.4.1"
   }
 }
