@@ -1,1 +1,2 @@
-const cmd = require('node-cmd'); cmd.run('npm run dev');
+const cmd = require('node-cmd');
+cmd.run('npm run dev');
