@@ -1,12 +1,15 @@
-import { getModelForClass, prop } from '@typegoose/typegoose';
+import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
 import { Types } from 'mongoose';
 
-class Image {
+@modelOptions({
+  schemaOptions: { collection: 'images' },
+})
+export class ImageClass {
   @prop()
   public _id: Types.ObjectId;
 
-  @prop()
+  @prop({ default: null })
   public deleted: boolean;
 }
 
-export const ImageModel = getModelForClass(Image);
+export const ImageModel = getModelForClass(ImageClass);
