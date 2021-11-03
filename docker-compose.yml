@@ -2,7 +2,8 @@ version: "3.8"
 
 services:
   mongodb:
-    image: mongo:5.0.2
+    container_name: image-serving-mongodb
+    image: mongo:latest
     restart: unless-stopped
     env_file: ./.env
     environment:
@@ -12,7 +13,8 @@ services:
       - "27017:27017"
     volumes:
       - db:/data/db
-  app:
+  backend:
+    container_name: image-serving-backend
     depends_on:
       - mongodb
     build: .
@@ -28,6 +30,8 @@ services:
       - DB_PORT=$DB_PORT
     stdin_open: true
     tty: true
+    volumes:
+      - "./src:/usr/app/image-serving-api/src"
 
 volumes:
   db:
