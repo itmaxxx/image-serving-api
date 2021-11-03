@@ -1,7 +1,8 @@
 import * as formidable from 'formidable';
-import * as fs from 'fs';
 import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 import { IncomingMessage, ServerResponse } from 'http';
+import { Types } from 'mongoose';
+import { moveFile } from '../utils/moveFile';
 
 export default class ImagesController {
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
@@ -26,22 +27,34 @@ export default class ImagesController {
             file.mimetype
           ) === -1
         ) {
-          return sendHttpJsonResponse(res, 403, { message: 'Image type not supported' });
+          return sendHttpJsonResponse(res, 403, {
+            message: 'File mime type not supported',
+          });
         }
 
-        await fs.rename(
-          file._writeStream.path,
-          './src/www/public/uploads/original/' + file.originalFilename,
-          (err) => {
-            if (err) throw err;
-          }
+        const fileExtension = file.originalFilename.slice(
+          file.originalFilename.lastIndexOf('.') + 1,
+          file.originalFilename.length
         );
 
-        await sendHttpJsonResponse(res, 200, { message: 'Your file uploaded' });
+        if (['jpg', 'jpeg', 'webp', 'png'].indexOf(fileExtension) === -1) {
+          return sendHttpJsonResponse(res, 403, {
+            message: 'File extension not supported',
+          });
+        }
+
+        const imageId = new Types.ObjectId();
+        const imageName = imageId + '.' + fileExtension;
+        const oldPath = file._writeStream.path;
+        const newPath = './src/www/public/uploads/original/' + imageName;
+
+        moveFile(oldPath, newPath);
+
+        await sendHttpJsonResponse(res, 200, { message: 'Image uploaded', imageId, imageName });
       });
     } catch (error: any) {
       sendHttpJsonResponse(res, 500, {
-        message: error.message || 'Failed to upload file',
+        message: error.message || 'Failed to upload image',
       });
     }
   }
