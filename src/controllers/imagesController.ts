@@ -3,13 +3,14 @@ import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Types } from 'mongoose';
 import { moveFile } from '../utils/moveFile';
+import { ImageModel } from '../models/imageModel';
 
 export default class ImagesController {
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
     try {
       const form = new formidable.IncomingForm();
 
-      await form.parse(req, async function (err, fields, files) {
+      form.parse(req, async function (err, fields, files) {
         if (err) {
           throw err;
         }
@@ -50,7 +51,13 @@ export default class ImagesController {
 
         moveFile(oldPath, newPath);
 
-        await sendHttpJsonResponse(res, 200, { message: 'Image uploaded', imageId, imageName });
+        await ImageModel.create({ _id: imageId });
+
+        await sendHttpJsonResponse(res, 200, {
+          message: 'Image uploaded',
+          imageId,
+          imageName,
+        });
       });
     } catch (error: any) {
       sendHttpJsonResponse(res, 500, {
