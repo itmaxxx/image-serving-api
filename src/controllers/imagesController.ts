@@ -1,12 +1,14 @@
-import formidable from 'formidable';
-import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
-import { IncomingMessage, ServerResponse } from 'http';
-import { Types } from 'mongoose';
-import { moveFile } from '../utils/moveFile';
-import { ImageClass, ImageModel } from '../models/imageModel';
-import { serveFile } from '../utils/serveFile';
 import fs from 'fs';
+import { Types } from 'mongoose';
+import formidable from 'formidable';
+import { IncomingMessage, ServerResponse } from 'http';
+import { ImageClass, ImageModel } from '../models/imageModel';
+import StatisticsService from '../services/statisticsService';
+import { EventType } from '../types/eventTypes';
+import { moveFile } from '../utils/moveFile';
+import { serveFile } from '../utils/serveFile';
 import { convertImage } from '../utils/convertImage';
+import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 
 export default class ImagesController {
   public static IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
@@ -59,6 +61,8 @@ export default class ImagesController {
           originalExtension: fileExtension,
         });
 
+        StatisticsService.logEvent(EventType.ImageUploaded, imageId.toString());
+
         await sendHttpJsonResponse(res, 200, {
           message: 'Image uploaded',
           imageId,
@@ -93,6 +97,8 @@ export default class ImagesController {
         ImagesController.IMAGES_PATH + imageId + '.' + imageFromDb.originalExtension;
 
       await convertImage(originalImagePath, requestedImagePath, options);
+
+      StatisticsService.logEvent(EventType.ImageConverted, imageId.toString());
     }
 
     return await serveFile(requestedImagePath, res);
@@ -135,6 +141,8 @@ export default class ImagesController {
       const imageId = decomposedUrl[1];
 
       await ImageModel.findOneAndUpdate({ _id: imageId }, { deleted: true });
+
+      StatisticsService.logEvent(EventType.ImageDeleted, imageId.toString());
 
       return sendHttpJsonResponse(res, 200, {
         message: 'Image deleted',
