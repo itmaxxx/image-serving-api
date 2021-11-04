@@ -58,7 +58,7 @@ export default class ImagesController {
 
         moveFile(oldPath, newPath);
 
-        await ImageModel.create({ _id: imageId });
+        await ImageModel.create({ _id: imageId, originalExtension: fileExtension });
 
         await sendHttpJsonResponse(res, 200, {
           message: 'Image uploaded',
@@ -79,10 +79,16 @@ export default class ImagesController {
       const imageId = decomposedUrl[1];
       const imageExtension = decomposedUrl[2];
 
-      console.log({ imageId, imageExtension });
-
       // If image doesn't exist in DB -> return 404
       // If image exist in DB, but required extension not found -> convert and serve
+
+      const imageFromDb = await ImageModel.findById(imageId);
+
+      console.log(imageFromDb);
+
+      if (!imageFromDb || imageFromDb.deleted) {
+        return sendHttpJsonResponse(res, 404, { message: 'Image not found or deleted' })
+      }
 
       if (
         !fs.existsSync(

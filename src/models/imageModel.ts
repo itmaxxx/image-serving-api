@@ -8,6 +8,9 @@ export class ImageClass {
   @prop()
   public _id: Types.ObjectId;
 
+  @prop()
+  public originalExtension: string;
+
   @prop({ default: null })
   public deleted: boolean;
 }
