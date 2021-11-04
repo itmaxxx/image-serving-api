@@ -12,9 +12,9 @@ const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, NODE_LOCAL_PORT } =
 
 const PORT = NODE_LOCAL_PORT || 3000;
 
-main().catch((err) => console.log(err));
+connectMongoDb().catch((err) => console.log(err));
 
-async function main() {
+async function connectMongoDb() {
   await mongoose.connect(
     `mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?authSource=admin`
   );
