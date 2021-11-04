@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import fs from 'fs';
 
 export const moveFile = (oldPath: string, newPath: string) => {
   fs.readFile(oldPath, function (err, data) {

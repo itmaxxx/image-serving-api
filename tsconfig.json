@@ -3,8 +3,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",
+    "esModuleInterop": true,
+    "target": "es6",
     "sourceMap": true,
-    "target": "es2017",
     "outDir": "./dist",
     "baseUrl": "./src"
   },

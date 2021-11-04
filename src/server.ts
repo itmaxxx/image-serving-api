@@ -1,10 +1,10 @@
-import * as http from 'http';
+import http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
 import ImagesController from './controllers/imagesController';
 import { sendHttpJsonResponse } from './utils/sendHttpJsonResponse';
 import { serveFile } from './utils/serveFile';
-import * as mongoose from 'mongoose';
-import * as dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
 dotenv.config();
 const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, API_PORT } = process.env;

@@ -1,11 +1,11 @@
-import * as formidable from 'formidable';
+import formidable from 'formidable';
 import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Types } from 'mongoose';
 import { moveFile } from '../utils/moveFile';
 import { ImageClass, ImageModel } from '../models/imageModel';
 import { serveFile } from '../utils/serveFile';
-import * as fs from 'fs';
+import fs from 'fs';
 import { convertImage } from '../utils/convertImage';
 
 export default class ImagesController {
