@@ -33,7 +33,7 @@ http
     if (url === '/upload' && req.method === 'POST') {
       return imagesController.uploadImage(req, res);
     } else if (
-      url.match(ImagesController.imageUrlPattern) &&
+      url.match(ImagesController.IMAGE_URL_PATTERN) &&
       req.method === 'GET'
     ) {
       return imagesController.serveImage(req, res);

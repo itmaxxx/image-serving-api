@@ -5,9 +5,13 @@ import { Types } from 'mongoose';
 import { moveFile } from '../utils/moveFile';
 import { ImageModel } from '../models/imageModel';
 import { serveFile } from '../utils/serveFile';
+import * as fs from 'fs';
 
 export default class ImagesController {
-  public static imageUrlPattern = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
+  // https://regex101.com/r/jO9pe9/1
+  public static IMAGE_URL_PATTERN =
+    /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
+  public static IMAGES_PATH = './src/www/uploads/';
 
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
     try {
@@ -50,7 +54,7 @@ export default class ImagesController {
         const imageId = new Types.ObjectId();
         const imageName = imageId + '.' + fileExtension;
         const oldPath = file._writeStream.path;
-        const newPath = './src/www/public/uploads/original/' + imageName;
+        const newPath = ImagesController.IMAGES_PATH + imageName;
 
         moveFile(oldPath, newPath);
 
@@ -71,14 +75,25 @@ export default class ImagesController {
 
   public async serveImage(req: IncomingMessage, res: ServerResponse) {
     try {
-      const decomposedUrl = req.url.match(ImagesController.imageUrlPattern);
+      const decomposedUrl = req.url.match(ImagesController.IMAGE_URL_PATTERN);
       const imageId = decomposedUrl[1];
       const imageExtension = decomposedUrl[2];
 
       console.log({ imageId, imageExtension });
 
+      // If image doesn't exist in DB -> return 404
+      // If image exist in DB, but required extension not found -> convert and serve
+
+      if (
+        !fs.existsSync(
+          ImagesController.IMAGES_PATH + imageId + '.' + imageExtension
+        )
+      ) {
+        console.log("Requested image doesn't exist");
+      }
+
       return await serveFile(
-        './src/www/public/uploads/original/' + imageId + '.' + imageExtension,
+        ImagesController.IMAGES_PATH + imageId + '.' + imageExtension,
         res
       );
     } catch (error) {
