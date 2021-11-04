@@ -2,9 +2,9 @@ import { ServerResponse } from 'http';
 
 export const sendHttpJsonResponse = (
   res: ServerResponse,
-  errorCode: number,
-  error: any
+  statusCode: number,
+  data: any
 ) => {
-  res.writeHead(errorCode, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(error));
+  res.writeHead(statusCode, { 'content-type': 'application/json' });
+  res.end(JSON.stringify(data));
 };
