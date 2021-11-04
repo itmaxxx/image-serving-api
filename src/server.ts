@@ -7,10 +7,10 @@ import * as mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
-const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, NODE_LOCAL_PORT } =
+const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, API_PORT } =
   process.env;
 
-const PORT = NODE_LOCAL_PORT || 3000;
+const PORT = API_PORT || 3000;
 
 connectMongoDb().catch((err) => console.log(err));
 
@@ -32,6 +32,11 @@ http
 
     if (url === '/upload' && req.method === 'POST') {
       return imagesController.uploadImage(req, res);
+    } else if (
+      url.match(ImagesController.imageUrlPattern) &&
+      req.method === 'GET'
+    ) {
+      return imagesController.serveImage(req, res);
     } else if (url === '/' && req.method === 'GET') {
       return serveFile('./src/www/index.html', res);
     }

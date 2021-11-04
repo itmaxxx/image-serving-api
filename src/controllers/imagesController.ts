@@ -4,8 +4,11 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { Types } from 'mongoose';
 import { moveFile } from '../utils/moveFile';
 import { ImageModel } from '../models/imageModel';
+import { serveFile } from '../utils/serveFile';
 
 export default class ImagesController {
+  public static imageUrlPattern = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
+
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
     try {
       const form = new formidable.IncomingForm();
@@ -56,12 +59,31 @@ export default class ImagesController {
         await sendHttpJsonResponse(res, 200, {
           message: 'Image uploaded',
           imageId,
-          imageName,
+          link: `${process.env.API_URL}/uploads/${imageName}`,
         });
       });
     } catch (error: any) {
       sendHttpJsonResponse(res, 500, {
         message: error.message || 'Failed to upload image',
+      });
+    }
+  }
+
+  public async serveImage(req: IncomingMessage, res: ServerResponse) {
+    try {
+      const decomposedUrl = req.url.match(ImagesController.imageUrlPattern);
+      const imageId = decomposedUrl[1];
+      const imageExtension = decomposedUrl[2];
+
+      console.log({ imageId, imageExtension });
+
+      return await serveFile(
+        './src/www/public/uploads/original/' + imageId + '.' + imageExtension,
+        res
+      );
+    } catch (error) {
+      return sendHttpJsonResponse(res, 404, {
+        message: 'Failed to serve image',
       });
     }
   }
