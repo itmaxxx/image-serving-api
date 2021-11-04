@@ -3,14 +3,14 @@ import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Types } from 'mongoose';
 import { moveFile } from '../utils/moveFile';
-import { ImageModel } from '../models/imageModel';
+import { ImageClass, ImageModel } from '../models/imageModel';
 import { serveFile } from '../utils/serveFile';
 import * as fs from 'fs';
+import { convertImage } from '../utils/convertImage';
 
 export default class ImagesController {
   // https://regex101.com/r/jO9pe9/1
-  public static IMAGE_URL_PATTERN =
-    /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
+  public static IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
   public static IMAGES_PATH = './src/www/uploads/';
 
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
@@ -22,19 +22,13 @@ export default class ImagesController {
           throw err;
         }
 
-        const file: any = (files.upload as any)?.length
-          ? files.image[0]
-          : files.image;
+        const file: any = (files.upload as any)?.length ? files.image[0] : files.image;
 
         if (!file) {
           return sendHttpJsonResponse(res, 403, { message: 'File not passed' });
         }
 
-        if (
-          ['image/jpg', 'image/jpeg', 'image/webp', 'image/png'].indexOf(
-            file.mimetype
-          ) === -1
-        ) {
+        if (['image/jpg', 'image/jpeg', 'image/webp', 'image/png'].indexOf(file.mimetype) === -1) {
           return sendHttpJsonResponse(res, 403, {
             message: 'File mime type not supported',
           });
@@ -58,7 +52,10 @@ export default class ImagesController {
 
         moveFile(oldPath, newPath);
 
-        await ImageModel.create({ _id: imageId, originalExtension: fileExtension });
+        await ImageModel.create({
+          _id: imageId,
+          originalExtension: fileExtension,
+        });
 
         await sendHttpJsonResponse(res, 200, {
           message: 'Image uploaded',
@@ -79,29 +76,26 @@ export default class ImagesController {
       const imageId = decomposedUrl[1];
       const imageExtension = decomposedUrl[2];
 
-      // If image doesn't exist in DB -> return 404
-      // If image exist in DB, but required extension not found -> convert and serve
+      console.log({ imageExtension });
 
-      const imageFromDb = await ImageModel.findById(imageId);
-
-      console.log(imageFromDb);
+      const imageFromDb: ImageClass = await ImageModel.findById(imageId);
 
       if (!imageFromDb || imageFromDb.deleted) {
-        return sendHttpJsonResponse(res, 404, { message: 'Image not found or deleted' })
+        return sendHttpJsonResponse(res, 404, {
+          message: 'Image not found or deleted',
+        });
       }
 
-      if (
-        !fs.existsSync(
-          ImagesController.IMAGES_PATH + imageId + '.' + imageExtension
-        )
-      ) {
-        console.log("Requested image doesn't exist");
+      const requestedImagePath = ImagesController.IMAGES_PATH + imageId + '.' + imageExtension;
+
+      if (!fs.existsSync(requestedImagePath)) {
+        const originalImagePath =
+          ImagesController.IMAGES_PATH + imageId + '.' + imageFromDb.originalExtension;
+
+        await convertImage(originalImagePath, requestedImagePath);
       }
 
-      return await serveFile(
-        ImagesController.IMAGES_PATH + imageId + '.' + imageExtension,
-        res
-      );
+      return await serveFile(requestedImagePath, res);
     } catch (error) {
       return sendHttpJsonResponse(res, 404, {
         message: 'Failed to serve image',
