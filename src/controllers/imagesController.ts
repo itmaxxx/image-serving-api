@@ -9,8 +9,10 @@ import * as fs from 'fs';
 import { convertImage } from '../utils/convertImage';
 
 export default class ImagesController {
-  // https://regex101.com/r/jO9pe9/1
   public static IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
+  public static IMAGE_WITH_OPTIONS_URL_PATTERN =
+    /^\/uploads\/(.+)\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
+  public static DELETE_IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})$/;
   public static IMAGES_PATH = './src/www/uploads/';
 
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
@@ -70,35 +72,76 @@ export default class ImagesController {
     }
   }
 
+  private async convertImageAndServe(
+    res: ServerResponse,
+    imageId: Types.ObjectId,
+    imageExtension: string,
+    options: any = {}
+  ) {
+    const imageFromDb: ImageClass = await ImageModel.findById(imageId);
+
+    if (!imageFromDb || imageFromDb.deleted) {
+      return sendHttpJsonResponse(res, 404, {
+        message: 'Image not found or deleted',
+      });
+    }
+
+    const requestedImagePath = ImagesController.IMAGES_PATH + imageId + '.' + imageExtension;
+
+    if (!fs.existsSync(requestedImagePath)) {
+      const originalImagePath =
+        ImagesController.IMAGES_PATH + imageId + '.' + imageFromDb.originalExtension;
+
+      await convertImage(originalImagePath, requestedImagePath, options);
+    }
+
+    return await serveFile(requestedImagePath, res);
+  }
+
   public async serveImage(req: IncomingMessage, res: ServerResponse) {
     try {
       const decomposedUrl = req.url.match(ImagesController.IMAGE_URL_PATTERN);
       const imageId = decomposedUrl[1];
       const imageExtension = decomposedUrl[2];
 
-      console.log({ imageExtension });
-
-      const imageFromDb: ImageClass = await ImageModel.findById(imageId);
-
-      if (!imageFromDb || imageFromDb.deleted) {
-        return sendHttpJsonResponse(res, 404, {
-          message: 'Image not found or deleted',
-        });
-      }
-
-      const requestedImagePath = ImagesController.IMAGES_PATH + imageId + '.' + imageExtension;
-
-      if (!fs.existsSync(requestedImagePath)) {
-        const originalImagePath =
-          ImagesController.IMAGES_PATH + imageId + '.' + imageFromDb.originalExtension;
-
-        await convertImage(originalImagePath, requestedImagePath);
-      }
-
-      return await serveFile(requestedImagePath, res);
+      await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension);
     } catch (error) {
       return sendHttpJsonResponse(res, 404, {
         message: 'Failed to serve image',
+      });
+    }
+  }
+
+  public async serveImageWithOptions(req: IncomingMessage, res: ServerResponse) {
+    try {
+      const decomposedUrl = req.url.match(ImagesController.IMAGE_WITH_OPTIONS_URL_PATTERN);
+      const options = decomposedUrl[1];
+      const imageId = decomposedUrl[2];
+      const imageExtension = decomposedUrl[3];
+
+      console.log(decomposedUrl);
+
+      await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension, options);
+    } catch (error) {
+      return sendHttpJsonResponse(res, 404, {
+        message: 'Failed to serve image',
+      });
+    }
+  }
+
+  public async deleteImage(req: IncomingMessage, res: ServerResponse) {
+    try {
+      const decomposedUrl = req.url.match(ImagesController.DELETE_IMAGE_URL_PATTERN);
+      const imageId = decomposedUrl[1];
+
+      await ImageModel.findOneAndUpdate({ _id: imageId }, { deleted: true });
+
+      return sendHttpJsonResponse(res, 200, {
+        message: 'Image deleted',
+      });
+    } catch (error) {
+      return sendHttpJsonResponse(res, 403, {
+        message: 'Failed to delete image',
       });
     }
   }
