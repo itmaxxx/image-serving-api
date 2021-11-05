@@ -70,6 +70,7 @@ export default class ImagesController {
         });
       });
     } catch (error: any) {
+      console.log(error);
       sendHttpJsonResponse(res, 500, {
         message: error.message || 'Failed to upload image',
       });
@@ -82,6 +83,8 @@ export default class ImagesController {
     imageExtension: string,
     options: any = {}
   ) {
+    const hrstart = process.hrtime();
+
     const imageFromDb: ImageClass = await ImageModel.findById(imageId);
 
     if (!imageFromDb || imageFromDb.deleted) {
@@ -98,8 +101,12 @@ export default class ImagesController {
 
       await convertImage(originalImagePath, requestedImagePath, options);
 
-      StatisticsService.logEvent(EventType.ImageConverted, imageId.toString());
+      const hrend = process.hrtime(hrstart);
+      StatisticsService.logEvent(EventType.ImageConverted, imageId.toString(), hrend[1] / 1000000);
     }
+
+    const hrend = process.hrtime(hrstart);
+    StatisticsService.logEvent(EventType.ImageServed, imageId.toString(), hrend[1] / 1000000);
 
     return await serveFile(requestedImagePath, res);
   }
@@ -112,6 +119,7 @@ export default class ImagesController {
 
       await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension);
     } catch (error) {
+      console.log(error);
       return sendHttpJsonResponse(res, 404, {
         message: 'Failed to serve image',
       });
@@ -129,6 +137,7 @@ export default class ImagesController {
 
       await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension, options);
     } catch (error) {
+      console.log(error);
       return sendHttpJsonResponse(res, 404, {
         message: 'Failed to serve image',
       });
@@ -137,17 +146,20 @@ export default class ImagesController {
 
   public async deleteImage(req: IncomingMessage, res: ServerResponse) {
     try {
+      const hrstart = process.hrtime();
       const decomposedUrl = req.url.match(ImagesController.DELETE_IMAGE_URL_PATTERN);
       const imageId = decomposedUrl[1];
 
       await ImageModel.findOneAndUpdate({ _id: imageId }, { deleted: true });
 
-      StatisticsService.logEvent(EventType.ImageDeleted, imageId.toString());
+      const hrend = process.hrtime(hrstart);
+      StatisticsService.logEvent(EventType.ImageDeleted, imageId.toString(), hrend[1] / 1000000);
 
       return sendHttpJsonResponse(res, 200, {
         message: 'Image deleted',
       });
     } catch (error) {
+      console.log(error);
       return sendHttpJsonResponse(res, 403, {
         message: 'Failed to delete image',
       });

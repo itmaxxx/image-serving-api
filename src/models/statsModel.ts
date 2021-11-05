@@ -8,8 +8,11 @@ export class StatEvent {
   @prop({ enum: EventType })
   public type: EventType;
 
-  @prop({ default: null })
-  public payload?: string;
+  @prop()
+  public imageId?: string;
+
+  @prop()
+  public elapsedTime?: number;
 
   @prop({ default: Date.now })
   public date: Date;
