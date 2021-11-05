@@ -4,7 +4,7 @@ import { EventType } from '../types/eventTypes';
 export default class StatisticsService {
   public static logEvent(type: EventType, imageId: string = null, elapsedTime: number = null) {
     console.log(
-      'Event logged: ' +
+      'Event: ' +
         type +
         ';' +
         (imageId ? ' imageId: ' + imageId + ';' : '') +
