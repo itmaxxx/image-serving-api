@@ -19,6 +19,12 @@ async function connectMongoDb() {
   );
 
   console.log('MongoDB connected');
+
+  if (!process.env.SECRET_KEY) {
+    console.warn(
+      'Service started without SECRET_KEY in .env, it means that anyone can upload/delete images'
+    );
+  }
 }
 
 http
