@@ -12,6 +12,7 @@ import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 import { parseImageFormatOptions } from '../utils/parseImageFormatOptions';
 import { ImageFormatOptions } from '../types/imageFormatOptions';
 import { optionsToString } from '../utils/optionsToString';
+import { checkIfAuthorized } from '../utils/checkIfAuthorized';
 
 export default class ImagesController {
   public static IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
@@ -22,60 +23,69 @@ export default class ImagesController {
 
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
     try {
+      const hrstart = process.hrtime();
       const form = new formidable.IncomingForm();
 
-      form.parse(req, async function (err, fields, files) {
-        if (err) {
-          throw err;
-        }
+      const parsedForm: any = await new Promise((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) return reject(err);
 
-        const file: any = (files.upload as any)?.length ? files.image[0] : files.image;
-
-        if (!file) {
-          return sendHttpJsonResponse(res, 403, { message: 'File not passed' });
-        }
-
-        if (['image/jpg', 'image/jpeg', 'image/webp', 'image/png'].indexOf(file.mimetype) === -1) {
-          return sendHttpJsonResponse(res, 403, {
-            message: 'File mime type not supported',
-          });
-        }
-
-        const fileExtension = file.originalFilename.slice(
-          file.originalFilename.lastIndexOf('.') + 1,
-          file.originalFilename.length
-        );
-
-        if (['jpg', 'jpeg', 'webp', 'png'].indexOf(fileExtension) === -1) {
-          return sendHttpJsonResponse(res, 403, {
-            message: 'File extension not supported',
-          });
-        }
-
-        const imageId = new Types.ObjectId();
-        const imageName = imageId + '.' + fileExtension;
-        const oldPath = file._writeStream.path;
-        const newPath = ImagesController.IMAGES_PATH + imageName;
-
-        moveFile(oldPath, newPath);
-
-        await ImageModel.create({
-          _id: imageId,
-          originalExtension: fileExtension,
-        });
-
-        StatisticsService.logEvent(EventType.ImageUploaded, imageId.toString());
-
-        await sendHttpJsonResponse(res, 200, {
-          message: 'Image uploaded',
-          imageId,
-          link: `${process.env.API_URL}/uploads/${imageName}`,
+          resolve({ fields, files });
         });
       });
-    } catch (error: any) {
+
+      const fields = parsedForm.fields;
+      const files = parsedForm.files;
+
+      checkIfAuthorized(fields);
+
+      const file: any = (files.upload as any)?.length ? files.image[0] : files.image;
+
+      if (!file) {
+        return sendHttpJsonResponse(res, 403, { message: 'File not passed' });
+      }
+
+      if (['image/jpg', 'image/jpeg', 'image/webp', 'image/png'].indexOf(file.mimetype) === -1) {
+        return sendHttpJsonResponse(res, 403, {
+          message: 'File mime type not supported',
+        });
+      }
+
+      const fileExtension = file.originalFilename.slice(
+        file.originalFilename.lastIndexOf('.') + 1,
+        file.originalFilename.length
+      );
+
+      if (['jpg', 'jpeg', 'webp', 'png'].indexOf(fileExtension) === -1) {
+        return sendHttpJsonResponse(res, 403, {
+          message: 'File extension not supported',
+        });
+      }
+
+      const imageId = new Types.ObjectId();
+      const imageName = imageId + '.' + fileExtension;
+      const oldPath = file._writeStream.path;
+      const newPath = ImagesController.IMAGES_PATH + imageName;
+
+      moveFile(oldPath, newPath);
+
+      await ImageModel.create({
+        _id: imageId,
+        originalExtension: fileExtension,
+      });
+
+      const hrend = process.hrtime(hrstart);
+      StatisticsService.logEvent(EventType.ImageUploaded, imageId.toString(), hrend[1] / 1000000);
+
+      await sendHttpJsonResponse(res, 200, {
+        message: 'Image uploaded',
+        imageId,
+        link: `${process.env.API_URL}/uploads/${imageName}`,
+      });
+    } catch (error) {
       console.log(error);
       sendHttpJsonResponse(res, 500, {
-        message: error.message || 'Failed to upload image',
+        message: 'Failed to upload image',
       });
     }
   }
@@ -149,6 +159,20 @@ export default class ImagesController {
   public async deleteImage(req: IncomingMessage, res: ServerResponse) {
     try {
       const hrstart = process.hrtime();
+      const form = new formidable.IncomingForm();
+
+      const parsedForm: any = await new Promise((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) return reject(err);
+
+          resolve({ fields, files });
+        });
+      });
+
+      const fields = parsedForm.fields;
+
+      checkIfAuthorized(fields);
+
       const decomposedUrl = req.url.match(ImagesController.DELETE_IMAGE_URL_PATTERN);
       const imageId = decomposedUrl[1];
 
