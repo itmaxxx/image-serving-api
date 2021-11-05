@@ -9,6 +9,9 @@ import { moveFile } from '../utils/moveFile';
 import { serveFile } from '../utils/serveFile';
 import { convertImage } from '../utils/convertImage';
 import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
+import { parseImageFormatOptions } from '../utils/parseImageFormatOptions';
+import { ImageFormatOptions } from '../types/imageFormatOptions';
+import { optionsToString } from '../utils/optionsToString';
 
 export default class ImagesController {
   public static IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
@@ -81,7 +84,7 @@ export default class ImagesController {
     res: ServerResponse,
     imageId: Types.ObjectId,
     imageExtension: string,
-    options: any = {}
+    options: ImageFormatOptions = {}
   ) {
     const hrstart = process.hrtime();
 
@@ -93,7 +96,8 @@ export default class ImagesController {
       });
     }
 
-    const requestedImagePath = ImagesController.IMAGES_PATH + imageId + '.' + imageExtension;
+    const requestedImagePath =
+      ImagesController.IMAGES_PATH + imageId + optionsToString(options) + '.' + imageExtension;
 
     if (!fs.existsSync(requestedImagePath)) {
       const originalImagePath =
@@ -129,11 +133,9 @@ export default class ImagesController {
   public async serveImageWithOptions(req: IncomingMessage, res: ServerResponse) {
     try {
       const decomposedUrl = req.url.match(ImagesController.IMAGE_WITH_OPTIONS_URL_PATTERN);
-      const options = decomposedUrl[1];
+      const options = parseImageFormatOptions(decomposedUrl[1]);
       const imageId = decomposedUrl[2];
       const imageExtension = decomposedUrl[3];
-
-      console.log(decomposedUrl);
 
       await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension, options);
     } catch (error) {
