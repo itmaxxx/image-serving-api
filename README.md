@@ -11,6 +11,34 @@ This repository will help you to create your own image hosting with converter an
 4. Run docker-compose up
 ```
 
+## Available options
+
+1. ```quality: q_[1-100]```: Specify output image quality.
+2. ```width: w_[>1]```: Specify output image width.
+3. ```height: h_[>1]```: Specify output image height.
+4. ```resize: r_[cover|contain|fill|inside|outside]```: Specify output image resize type, default value: ```cover```.
+
+### How to specify image options
+
+After uploading image you will get image url which looks like:
+```http://localhost:3000/uploads/6188f92dde5947189ec3205a.jpg```
+
+You can specify several output image options in url separating them with ```,```:
+1. We need to resize image to 250x250 pixels and fill all space:
+```http://localhost:3000/uploads/r_fill,w_250,h_250/6188f92dde5947189ec3205a.jpg```
+2. We need image with max size of 500 pixels, preserving original image aspect ratio, image quality should be ```50%```
+   ```http://localhost:3000/uploads/r_inside,w_500,h_500,q_50/6188f92dde5947189ec3205a.jpg```
+
+### Image resizing options
+
+When both a width and height are provided, the possible methods by which the image should fit these are:
+
+1. ```cover```: (default) Preserving aspect ratio, ensure the image covers both provided dimensions by cropping/clipping to fit.
+2. ```contain```: Preserving aspect ratio, contain within both provided dimensions using "letterboxing" where necessary.
+3. ```fill```: Ignore the aspect ratio of the input and stretch to both provided dimensions.
+4. ```inside```: Preserving aspect ratio, resize the image to be as large as possible while ensuring its dimensions are less than or equal to both those specified.
+5. ```outside```: Preserving aspect ratio, resize the image to be as small as possible while ensuring its dimensions are greater than or equal to both those specified.
+
 ### Test server load
 autocannon -c 100 -d 5 -p 10 http://localhost:3000/
 
