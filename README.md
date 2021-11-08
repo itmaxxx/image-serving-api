@@ -29,6 +29,17 @@ You can specify several output image options in url separating them with ```,```
 2. We need image with max size of 500 pixels, preserving original image aspect ratio, image quality should be ```50%```
    ```http://localhost:3000/uploads/r_inside,w_500,h_500,q_50/6188f92dde5947189ec3205a.jpg```
 
+## Supported image types
+
+Currently, we support following image extensions:
+1. ```jpg```
+1. ```jpeg```
+1. ```png```
+1. ```webp```
+
+When requesting image you can specify image extension, like this:
+```http://localhost:3000/uploads/6188f92dde5947189ec3205a.<jpg|jpeg|png|webp>```
+
 ### Image resizing options
 
 When both a width and height are provided, the possible methods by which the image should fit these are:
