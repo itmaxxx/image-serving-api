@@ -7,12 +7,13 @@ import StatisticsService from '../services/statisticsService';
 import { EventType } from '../types/eventTypes';
 import { moveFile } from '../utils/moveFile';
 import { serveFile } from '../utils/serveFile';
-import { convertImage } from '../utils/convertImage';
+import { convertImageAndSaveToFile } from '../utils/convertImageAndSaveToFile';
 import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 import { parseImageFormatOptions } from '../utils/parseImageFormatOptions';
 import { ImageFormatOptions } from '../types/imageFormatOptions';
 import { optionsToString } from '../utils/optionsToString';
 import { checkIfAuthorized } from '../utils/checkIfAuthorized';
+import { ImageExtension } from '../types/imageExtension'
 
 export default class ImagesController {
   public static IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
@@ -93,7 +94,7 @@ export default class ImagesController {
   private async convertImageAndServe(
     res: ServerResponse,
     imageId: Types.ObjectId,
-    imageExtension: string,
+    imageExtension: ImageExtension,
     options: ImageFormatOptions = {}
   ) {
     const hrstart = process.hrtime();
@@ -113,7 +114,7 @@ export default class ImagesController {
       const originalImagePath =
         ImagesController.IMAGES_PATH + imageId + '.' + imageFromDb.originalExtension;
 
-      await convertImage(originalImagePath, requestedImagePath, options);
+      await convertImageAndSaveToFile(originalImagePath, requestedImagePath, imageExtension, options);
 
       const hrend = process.hrtime(hrstart);
       StatisticsService.logEvent(EventType.ImageConverted, imageId.toString(), hrend[1] / 1000000);
@@ -129,7 +130,7 @@ export default class ImagesController {
     try {
       const decomposedUrl = req.url.match(ImagesController.IMAGE_URL_PATTERN);
       const imageId = decomposedUrl[1];
-      const imageExtension = decomposedUrl[2];
+      const imageExtension = decomposedUrl[2] as ImageExtension;
 
       await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension);
     } catch (error) {
@@ -145,7 +146,7 @@ export default class ImagesController {
       const decomposedUrl = req.url.match(ImagesController.IMAGE_WITH_OPTIONS_URL_PATTERN);
       const options = parseImageFormatOptions(decomposedUrl[1]);
       const imageId = decomposedUrl[2];
-      const imageExtension = decomposedUrl[3];
+      const imageExtension = decomposedUrl[3] as ImageExtension;
 
       await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension, options);
     } catch (error) {
