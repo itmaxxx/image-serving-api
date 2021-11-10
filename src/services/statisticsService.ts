@@ -12,4 +12,8 @@ export default class StatisticsService {
     );
     return StatsModel.create({ type, imageId, elapsedTime });
   }
+
+  public getEventsAfterDate(date: Date, type: EventType) {
+    return StatsModel.find({ type, date: { $gt: date } }).select('-_id -__v -type');
+  }
 }

@@ -5,6 +5,7 @@ import { sendHttpJsonResponse } from './utils/sendHttpJsonResponse';
 import { serveFile } from './utils/serveFile';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import StatisticsController from './controllers/statisticsController'
 
 dotenv.config();
 const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, API_PORT } = process.env;
@@ -34,6 +35,7 @@ http
     console.log(`[${req.method}] ${url}`);
 
     const imagesController = new ImagesController();
+    const statisticsController = new StatisticsController();
 
     if (url === '/upload' && req.method === 'POST') {
       return imagesController.uploadImage(req, res);
@@ -43,6 +45,8 @@ http
       return imagesController.serveImageWithOptions(req, res);
     } else if (url.match(ImagesController.DELETE_IMAGE_URL_PATTERN) && req.method === 'DELETE') {
       return imagesController.deleteImage(req, res);
+    } else if (url.match(StatisticsController.GET_STATS_WITH_TYPE_AND_DATE) && req.method === 'GET') {
+      return statisticsController.getStatisticsForTypeAndDate(req, res);
     } else if (url === '/' && req.method === 'GET') {
       return serveFile('./src/www/index.html', res);
     }
