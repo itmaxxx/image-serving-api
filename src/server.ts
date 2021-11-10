@@ -37,9 +37,7 @@ http
     const imagesController = new ImagesController();
     const statisticsController = new StatisticsController();
 
-    if (url === '/upload' && req.method === 'POST') {
-      return imagesController.uploadImage(req, res);
-    } else if (url.match(ImagesController.IMAGE_URL_PATTERN) && req.method === 'GET') {
+    if (url.match(ImagesController.IMAGE_URL_PATTERN) && req.method === 'GET') {
       return imagesController.serveImage(req, res);
     } else if (url.match(ImagesController.IMAGE_WITH_OPTIONS_URL_PATTERN) && req.method === 'GET') {
       return imagesController.serveImageWithOptions(req, res);
@@ -47,6 +45,10 @@ http
       return imagesController.deleteImage(req, res);
     } else if (url.match(StatisticsController.GET_STATS_WITH_TYPE_AND_DATE) && req.method === 'GET') {
       return statisticsController.getStatisticsForTypeAndDate(req, res);
+    } else if (url === '/upload' && req.method === 'POST') {
+      return imagesController.uploadImage(req, res);
+    } else if (url === '/statistics' && req.method === 'GET') {
+      return serveFile('./src/www/statistics.html', res);
     } else if (url === '/' && req.method === 'GET') {
       return serveFile('./src/www/index.html', res);
     }
