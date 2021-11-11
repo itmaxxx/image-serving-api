@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { sendHttpJsonResponse } from '../utils/sendHttpJsonResponse';
 import StatisticsService from '../services/statisticsService';
 import { EventType } from '../types/eventTypes';
+import { handleRequestError } from '../utils/handleRequestError'
 
 export default class StatisticsController {
   public static GET_STATS_WITH_TYPE_AND_DATE =
@@ -72,10 +73,7 @@ export default class StatisticsController {
         data: { queriesCount, averageResponseTime },
       });
     } catch (error) {
-      console.log(error);
-      sendHttpJsonResponse(res, 500, {
-        message: 'Failed to get statistics',
-      });
+      return handleRequestError(error, res, 'Failed to get statistics');
     }
   }
 }

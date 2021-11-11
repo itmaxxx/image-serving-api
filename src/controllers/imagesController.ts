@@ -13,7 +13,8 @@ import { parseImageFormatOptions } from '../utils/parseImageFormatOptions';
 import { ImageFormatOptions } from '../types/imageFormatOptions';
 import { optionsToString } from '../utils/optionsToString';
 import { checkIfAuthorized } from '../utils/checkIfAuthorized';
-import { ImageExtension } from '../types/imageExtension'
+import { ImageExtension } from '../types/imageExtension';
+import { handleRequestWithAuthorizationError } from '../utils/handleRequestWithAuthorizationError';
 
 export default class ImagesController {
   public static IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
@@ -84,14 +85,12 @@ export default class ImagesController {
         link: `${process.env.API_URL}/uploads/${imageName}`,
       });
     } catch (error) {
-      console.log(error);
-      sendHttpJsonResponse(res, 500, {
-        message: 'Failed to upload image',
-      });
+      handleRequestWithAuthorizationError(error, res, 'Failed to upload image');
     }
   }
 
   private async convertImageAndServe(
+    req: IncomingMessage,
     res: ServerResponse,
     imageId: Types.ObjectId,
     imageExtension: ImageExtension,
@@ -111,10 +110,31 @@ export default class ImagesController {
       ImagesController.IMAGES_PATH + imageId + optionsToString(options) + '.' + imageExtension;
 
     if (!fs.existsSync(requestedImagePath)) {
+      if (process.env.KEY_REQUIRED_TO_TRANSFORM_IMAGES === 'true') {
+        const form = new formidable.IncomingForm();
+
+        const parsedForm: any = await new Promise((resolve, reject) => {
+          form.parse(req, (err, fields, files) => {
+            if (err) return reject(err);
+
+            resolve({ fields, files });
+          });
+        });
+
+        const fields = parsedForm.fields;
+
+        checkIfAuthorized(fields);
+      }
+
       const originalImagePath =
         ImagesController.IMAGES_PATH + imageId + '.' + imageFromDb.originalExtension;
 
-      await convertImageAndSaveToFile(originalImagePath, requestedImagePath, imageExtension, options);
+      await convertImageAndSaveToFile(
+        originalImagePath,
+        requestedImagePath,
+        imageExtension,
+        options
+      );
 
       const hrend = process.hrtime(hrstart);
       StatisticsService.logEvent(EventType.ImageConverted, imageId.toString(), hrend[1] / 1000000);
@@ -132,12 +152,9 @@ export default class ImagesController {
       const imageId = decomposedUrl[1];
       const imageExtension = decomposedUrl[2] as ImageExtension;
 
-      await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension);
+      await this.convertImageAndServe(req, res, new Types.ObjectId(imageId), imageExtension);
     } catch (error) {
-      console.log(error);
-      return sendHttpJsonResponse(res, 404, {
-        message: 'Failed to serve image',
-      });
+      return handleRequestWithAuthorizationError(error, res, 'Failed to serve image');
     }
   }
 
@@ -148,12 +165,15 @@ export default class ImagesController {
       const imageId = decomposedUrl[2];
       const imageExtension = decomposedUrl[3] as ImageExtension;
 
-      await this.convertImageAndServe(res, new Types.ObjectId(imageId), imageExtension, options);
+      await this.convertImageAndServe(
+        req,
+        res,
+        new Types.ObjectId(imageId),
+        imageExtension,
+        options
+      );
     } catch (error) {
-      console.log(error);
-      return sendHttpJsonResponse(res, 404, {
-        message: 'Failed to serve image',
-      });
+      return handleRequestWithAuthorizationError(error, res, 'Failed to serve image');
     }
   }
 
@@ -186,10 +206,7 @@ export default class ImagesController {
         message: 'Image deleted',
       });
     } catch (error) {
-      console.log(error);
-      return sendHttpJsonResponse(res, 403, {
-        message: 'Failed to delete image',
-      });
+      handleRequestWithAuthorizationError(error, res, 'Failed to delete image');
     }
   }
 }
