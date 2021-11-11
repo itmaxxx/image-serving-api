@@ -20,8 +20,56 @@ export default class StatisticsController {
         eventType.toUpperCase() as EventType
       );
 
+      const countForLast24Hours = (data) => {
+        const arrayOfHours = data.map((s) => new Date(s.date).getHours());
+        const result = {};
+
+        for (let i = 0; i < 24; i++) {
+          result[i] = 0;
+        }
+
+        arrayOfHours.forEach((h) => result[h - 1]++);
+
+        return result;
+      };
+
+      const elapsedTimeForLast24Hours = (data) => {
+        const arrayOfHours = data.map(s => ({ hour: new Date(s.date).getHours(), elapsedTime: s.elapsedTime }));
+        const result = {};
+
+        for (let i = 0; i < 24; i++) {
+          result[i] = 0;
+        }
+
+        arrayOfHours.forEach(h => result[h.hour - 1] += h.elapsedTime);
+
+        return result;
+      }
+
+      const averageElapsedTimeForLast24Hours = (data) => {
+        const elapsedTime = elapsedTimeForLast24Hours(data);
+
+        const arrayOfHours = data.map(s => ({ hour: new Date(s.date).getHours(), elapsedTime: s.elapsedTime }));
+        const result = {};
+
+        for (let i = 0; i < 24; i++) {
+          result[i] = 0;
+        }
+
+        arrayOfHours.forEach(h => result[h.hour - 1]++);
+
+        for (let i = 0; i < 24; i++) {
+          result[i] = elapsedTime[i] / (result[i] || 1);
+        }
+
+        return result;
+      }
+
+      const queriesCount = countForLast24Hours(stats);
+      const averageResponseTime = averageElapsedTimeForLast24Hours(stats);
+
       await sendHttpJsonResponse(res, 200, {
-        data: stats,
+        data: { queriesCount, averageResponseTime },
       });
     } catch (error) {
       console.log(error);

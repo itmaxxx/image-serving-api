@@ -15,60 +15,11 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      const countForLast24Hours = (data) => {
-        const arrayOfHours = data.map((s) => new Date(s.date).getHours());
-        const result = {};
-
-        for (let i = 0; i < 24; i++) {
-          result[i] = 0;
-        }
-
-        arrayOfHours.forEach((h) => result[h - 1]++);
-
-        return result;
-      };
-
-      const elapsedTimeForLast24Hours = (data) => {
-        const arrayOfHours = data.map(s => ({ hour: new Date(s.date).getHours(), elapsedTime: s.elapsedTime }));
-        const result = {};
-
-        for (let i = 0; i < 24; i++) {
-          result[i] = 0;
-        }
-
-        arrayOfHours.forEach(h => result[h.hour - 1] += h.elapsedTime);
-
-        return result;
-      }
-
-      const averageElapsedTimeForLast24Hours = (data) => {
-        const elapsedTime = elapsedTimeForLast24Hours(data);
-
-        const arrayOfHours = data.map(s => ({ hour: new Date(s.date).getHours(), elapsedTime: s.elapsedTime }));
-        const result = {};
-
-        for (let i = 0; i < 24; i++) {
-          result[i] = 0;
-        }
-
-        arrayOfHours.forEach(h => result[h.hour - 1]++);
-
-        for (let i = 0; i < 24; i++) {
-          result[i] = elapsedTime[i] / (result[i] || 1);
-        }
-
-        return result;
-      }
-
       const setupChart = async () => {
         const response = await fetch('http://localhost:3000/stats/image_served/1440');
         const json = await response.json();
-        const queriesCount = countForLast24Hours(json.data);
-        const averageResponseTime = averageElapsedTimeForLast24Hours(json.data);
 
-        console.log({ response, json, stats: queriesCount });
-
-        const labels = Object.keys(queriesCount).map((s) => parseInt(s) + 1 + ' hr');
+        const labels = Object.keys(json.data.queriesCount).map((s) => parseInt(s) + 1 + ' hr');
         const data = {
           labels: labels,
           datasets: [
@@ -76,13 +27,13 @@
               label: 'Queries per hour',
               backgroundColor: 'rgb(161,99,255)',
               borderColor: 'rgb(174,99,255)',
-              data: Object.values(queriesCount),
+              data: Object.values(json.data.queriesCount),
             },
             {
               label: 'Average request time in ms',
               backgroundColor: 'rgb(99,130,255)',
               borderColor: 'rgb(99,154,255)',
-              data: Object.values(averageResponseTime),
+              data: Object.values(json.data.averageResponseTime),
             },
           ],
         };
