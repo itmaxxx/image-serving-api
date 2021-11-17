@@ -56,7 +56,7 @@ export default class ImagesController {
       const fileExtension = file.originalFilename.slice(
         file.originalFilename.lastIndexOf('.') + 1,
         file.originalFilename.length
-      );
+      ).toLowerCase();
 
       if (['jpg', 'jpeg', 'webp', 'png'].indexOf(fileExtension) === -1) {
         return sendHttpJsonResponse(res, 403, {
