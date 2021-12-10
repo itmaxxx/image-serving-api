@@ -5,22 +5,23 @@ services:
     container_name: image-serving-mongodb
     image: mongo:latest
     restart: unless-stopped
-    env_file: ./.env
+    env_file: .env
     environment:
       - MONGO_INITDB_ROOT_USERNAME=$DB_USER
       - MONGO_INITDB_ROOT_PASSWORD=$DB_PASSWORD
     ports:
-      - "27017:27017"
+      - "${DB_PORT}:27017"
     volumes:
       - db:/data/db
   nginx:
     container_name: image-serving-nginx
     image: nginx:latest
     restart: always
+    env_file: .env
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/node.template
     ports:
-      - '3001:80'
+      - '${NGINX_PORT}:80'
     # Copy rename config to default.conf
     command: 'bash -c "cat /etc/nginx/conf.d/node.template > /etc/nginx/conf.d/default.conf && nginx -g ''daemon off;''"'
     # Allows using http://backend:3000 in .conf
@@ -32,9 +33,9 @@ services:
       - mongodb
     build: .
     restart: unless-stopped
-    env_file: ./.env
+    env_file: .env
     ports:
-      - "3000:3000"
+      - "${API_PORT}:${API_PORT}"
     environment:
       - DB_HOST=mongodb
       - DB_USER=$DB_USER
