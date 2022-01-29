@@ -26,7 +26,9 @@ export default class ImagesController {
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
     try {
       const hrstart = process.hrtime();
-      const form = new formidable.IncomingForm();
+      const form = new formidable.IncomingForm({
+        maxFileSize: (parseInt(process.env.MAX_IMAGE_SIZE) || 1) * 1024 * 1024,
+      });
 
       const parsedForm: any = await new Promise((resolve, reject) => {
         form.parse(req, (err, fields, files) => {
@@ -44,22 +46,21 @@ export default class ImagesController {
       const file: any = (files.upload as any)?.length ? files.image[0] : files.image;
 
       if (!file) {
-        return sendHttpJsonResponse(res, 403, { message: 'File not passed' });
+        return sendHttpJsonResponse(res, 406, { message: 'File not passed' });
       }
 
       if (['image/jpg', 'image/jpeg', 'image/webp', 'image/png'].indexOf(file.mimetype) === -1) {
-        return sendHttpJsonResponse(res, 403, {
+        return sendHttpJsonResponse(res, 415, {
           message: 'File mime type not supported',
         });
       }
 
-      const fileExtension = file.originalFilename.slice(
-        file.originalFilename.lastIndexOf('.') + 1,
-        file.originalFilename.length
-      ).toLowerCase();
+      const fileExtension = file.originalFilename
+        .slice(file.originalFilename.lastIndexOf('.') + 1, file.originalFilename.length)
+        .toLowerCase();
 
       if (['jpg', 'jpeg', 'webp', 'png'].indexOf(fileExtension) === -1) {
-        return sendHttpJsonResponse(res, 403, {
+        return sendHttpJsonResponse(res, 415, {
           message: 'File extension not supported',
         });
       }
@@ -79,13 +80,22 @@ export default class ImagesController {
       const hrend = process.hrtime(hrstart);
       StatisticsService.logEvent(EventType.ImageUploaded, imageId.toString(), hrend[1] / 1000000);
 
-      await sendHttpJsonResponse(res, 200, {
+      await sendHttpJsonResponse(res, 201, {
         message: 'Image uploaded',
         imageId,
         link: `${process.env.API_URL}/uploads/${imageName}`,
       });
     } catch (error) {
-      handleRequestWithAuthorizationError(error, res, 'Failed to upload image');
+      switch (error.code) {
+        case 1009:
+          sendHttpJsonResponse(res, 413, {
+            message: 'Max image size exceeded',
+          });
+          break;
+        default:
+          handleRequestWithAuthorizationError(error, res, 'Failed to upload image');
+          break;
+      }
     }
   }
 
