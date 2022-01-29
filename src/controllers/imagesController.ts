@@ -46,11 +46,11 @@ export default class ImagesController {
       const file: any = (files.upload as any)?.length ? files.image[0] : files.image;
 
       if (!file) {
-        return sendHttpJsonResponse(res, 403, { message: 'File not passed' });
+        return sendHttpJsonResponse(res, 406, { message: 'File not passed' });
       }
 
       if (['image/jpg', 'image/jpeg', 'image/webp', 'image/png'].indexOf(file.mimetype) === -1) {
-        return sendHttpJsonResponse(res, 403, {
+        return sendHttpJsonResponse(res, 415, {
           message: 'File mime type not supported',
         });
       }
@@ -60,7 +60,7 @@ export default class ImagesController {
         .toLowerCase();
 
       if (['jpg', 'jpeg', 'webp', 'png'].indexOf(fileExtension) === -1) {
-        return sendHttpJsonResponse(res, 403, {
+        return sendHttpJsonResponse(res, 415, {
           message: 'File extension not supported',
         });
       }
@@ -80,7 +80,7 @@ export default class ImagesController {
       const hrend = process.hrtime(hrstart);
       StatisticsService.logEvent(EventType.ImageUploaded, imageId.toString(), hrend[1] / 1000000);
 
-      await sendHttpJsonResponse(res, 200, {
+      await sendHttpJsonResponse(res, 201, {
         message: 'Image uploaded',
         imageId,
         link: `${process.env.API_URL}/uploads/${imageName}`,

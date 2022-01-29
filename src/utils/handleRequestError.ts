@@ -16,7 +16,7 @@ export const handleRequestError = (
     console.log(error);
   }
 
-  return sendHttpJsonResponse(res, 500, {
+  return sendHttpJsonResponse(res, 400, {
     message: errorMessage ? errorMessage : error?.message,
   });
 };
