@@ -164,6 +164,12 @@ export default class ImagesController {
 
       await this.convertImageAndServe(req, res, new Types.ObjectId(imageId), imageExtension);
     } catch (error) {
+      if (error.message === 'Input file is missing') {
+        return sendHttpJsonResponse(res, 404, {
+          message: 'Image not found or deleted',
+        });
+      }
+
       return handleRequestWithAuthorizationError(error, res, 'Failed to serve image');
     }
   }
@@ -183,6 +189,12 @@ export default class ImagesController {
         options
       );
     } catch (error) {
+      if (error.message === 'Input file is missing') {
+        return sendHttpJsonResponse(res, 404, {
+          message: 'Image not found or deleted',
+        });
+      }
+
       return handleRequestWithAuthorizationError(error, res, 'Failed to serve image');
     }
   }
