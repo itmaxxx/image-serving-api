@@ -8,13 +8,16 @@ import { IncomingMessage, ServerResponse } from 'http';
 import ImagesController from './controllers/imagesController';
 import { sendHttpJsonResponse } from './utils/sendHttpJsonResponse';
 import StatisticsController from './controllers/statisticsController';
+import prepareAutoUploadImages from './utils/prepareAutoUploadImages'
 
 dotenv.config();
 const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, API_PORT } = process.env;
 
 const PORT = API_PORT || 3000;
 
-connectMongoDb().catch((err) => console.log(err));
+connectMongoDb()
+  .catch((err) => console.error(err))
+  .then(prepareAutoUploadImages);
 
 async function connectMongoDb() {
   await mongoose.connect(
@@ -40,7 +43,7 @@ if (cluster.isPrimary) {
   cluster.on('exit', () => {
     console.log(`Worker process ${process.pid} died`);
     cluster.fork();
-  })
+  });
 } else {
   console.log(`Worker process ${process.pid} is running`);
 
