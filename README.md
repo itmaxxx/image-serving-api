@@ -50,6 +50,18 @@ When both a width and height are provided, the possible methods by which the ima
 4. ```inside```: Preserving aspect ratio, resize the image to be as large as possible while ensuring its dimensions are less than or equal to both those specified.
 5. ```outside```: Preserving aspect ratio, resize the image to be as small as possible while ensuring its dimensions are greater than or equal to both those specified.
 
+### Possible errors and responses
+
+#### [POST] /upload
+
+- ```StatusCode: 201, Message: Image uploaded```: Image uploaded successfully, in response you will get ```{ fileId: 'uploaded_image_id', link: 'direct_link_to_uploaded_image' }```
+- ```StatusCode: 400, Message: Failed to upload image```: Occurs in case of any other errors happened while trying to upload image, see your log
+- ```StatusCode: 401, Message: Not authorized```: Occurs when secret key is required but not passed
+- ```StatusCode: 406, Message: File not passed```
+- ```StatusCode: 415, Message: File mime type not supported```
+- ```StatusCode: 415, Message: File extension not supported```
+- ```StatusCode: 413, Message: 'Max image size exceeded```: Occurs when uploaded image file size exceeds env.MAX_IMAGE_SIZE property
+
 ### Test server load
 autocannon -c 100 -d 5 -p 10 http://localhost:3000/
 
