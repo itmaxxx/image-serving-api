@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   mongodb:
-    container_name: image-serving-mongodb
+    container_name: paradigma-image-serving-mongodb
     image: mongo:latest
     restart: unless-stopped
     env_file: .env
@@ -14,7 +14,7 @@ services:
     volumes:
       - db:/data/db
   nginx:
-    container_name: image-serving-nginx
+    container_name: paradigma-image-serving-nginx
     image: nginx:latest
     restart: always
     env_file: .env
@@ -28,7 +28,7 @@ services:
     links:
       - backend
   backend:
-    container_name: image-serving-backend
+    container_name: paradgima-image-serving-backend
     depends_on:
       - mongodb
     build: .
