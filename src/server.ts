@@ -1,10 +1,14 @@
+import fs from 'fs';
 import http from 'http';
+import path from 'path';
 import { cpus } from 'os';
 import dotenv from 'dotenv';
 import cluster from 'cluster';
 import mongoose from 'mongoose';
+import { copyFile } from 'fs/promises';
 import { serveFile } from './utils/serveFile';
 import { IncomingMessage, ServerResponse } from 'http';
+import { ImageClass, ImageModel } from './models/imageModel';
 import ImagesController from './controllers/imagesController';
 import { sendHttpJsonResponse } from './utils/sendHttpJsonResponse';
 import StatisticsController from './controllers/statisticsController';
@@ -14,7 +18,9 @@ const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, API_PORT } = process.en
 
 const PORT = API_PORT || 3000;
 
-connectMongoDb().catch((err) => console.log(err));
+connectMongoDb()
+  .catch((err) => console.error(err))
+  .then(setupAutoUploadImages);
 
 async function connectMongoDb() {
   await mongoose.connect(
@@ -30,6 +36,56 @@ async function connectMongoDb() {
   }
 }
 
+function setupAutoUploadImages() {
+  const autoLoadFolderPath = __dirname + '/www/uploads/autoUpload';
+
+  fs.readdir(autoLoadFolderPath, async (err, files) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    for (const file of files) {
+      try {
+        const fileExtension = file.slice(file.lastIndexOf('.') + 1, file.length).toLowerCase();
+
+        if (['jpg', 'jpeg', 'webp', 'png'].indexOf(fileExtension) === -1) {
+          console.error(`Fixtures: ${file} has unsupported file extension`);
+          continue;
+        }
+
+        const imageId = file.slice(0, 24);
+        const uploadFolderPath = ImagesController.IMAGES_PATH + file;
+
+        await copyFile(path.join(autoLoadFolderPath, file), uploadFolderPath);
+
+        const imageFromDb: ImageClass = await ImageModel.findById(imageId);
+
+        if (imageFromDb?.deleted) {
+          await ImageModel.deleteOne({ _id: imageId });
+
+          console.log(`Fixtures: ${file} was deleted from db`);
+        }
+
+        if (!imageFromDb) {
+          await ImageModel.create({
+            _id: imageId,
+            originalExtension: fileExtension,
+          });
+
+          console.log(`Fixtures: ${file} was initialized`);
+
+          continue;
+        }
+
+        console.log(`Fixtures: ${file} image was moved to uploads`);
+      } catch (error) {
+        console.error(`Fixtures: failed to load fixture file: ${file}`, error);
+      }
+    }
+  });
+}
+
 if (cluster.isPrimary) {
   console.log(`Primary process ${process.pid} is running`);
 
@@ -40,7 +96,7 @@ if (cluster.isPrimary) {
   cluster.on('exit', () => {
     console.log(`Worker process ${process.pid} died`);
     cluster.fork();
-  })
+  });
 } else {
   console.log(`Worker process ${process.pid} is running`);
 

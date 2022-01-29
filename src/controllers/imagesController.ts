@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path'
 import { Types } from 'mongoose';
 import formidable from 'formidable';
 import { IncomingMessage, ServerResponse } from 'http';
@@ -21,7 +22,7 @@ export default class ImagesController {
   public static IMAGE_WITH_OPTIONS_URL_PATTERN =
     /^\/uploads\/(.+)\/([0-9A-z]{24})\.(jpg|jpeg|png|webp)$/;
   public static DELETE_IMAGE_URL_PATTERN = /^\/uploads\/([0-9A-z]{24})$/;
-  public static IMAGES_PATH = './src/www/uploads/';
+  public static IMAGES_PATH = path.join(__dirname, '/../www/uploads/');
 
   public async uploadImage(req: IncomingMessage, res: ServerResponse) {
     try {
